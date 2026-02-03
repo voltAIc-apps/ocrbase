@@ -53,7 +53,7 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
 
   const { data: infra } = useInfra();
 
-  useJobSubscription(jobId, {
+  const { error: connectionError } = useJobSubscription(jobId, {
     enabled: isProcessing,
     onComplete: () => {
       toast.success("Job completed!");
@@ -138,6 +138,15 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
             <div className="mt-4 rounded-lg bg-destructive/10 p-4">
               <p className="text-sm font-medium text-destructive">Error</p>
               <p className="text-sm text-destructive/90">{job.errorMessage}</p>
+            </div>
+          )}
+
+          {connectionError && (
+            <div className="mt-4 rounded-lg bg-destructive/10 p-4">
+              <p className="text-sm font-medium text-destructive">
+                Connection Error
+              </p>
+              <p className="text-sm text-destructive/90">{connectionError}</p>
             </div>
           )}
         </CardContent>
