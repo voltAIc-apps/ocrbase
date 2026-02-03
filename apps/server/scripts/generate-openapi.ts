@@ -14,8 +14,6 @@ import { healthRoutes } from "../src/modules/health";
 import { jobsRoutes } from "../src/modules/jobs";
 import { JobModel } from "../src/modules/jobs/model";
 import { jobsWebSocket } from "../src/modules/jobs/websocket";
-import { keysRoutes } from "../src/modules/keys";
-import { KeyModel } from "../src/modules/keys/model";
 import { parseRoutes } from "../src/modules/parse";
 import { schemasRoutes } from "../src/modules/schemas";
 import { SchemaModel } from "../src/modules/schemas/model";
@@ -28,11 +26,6 @@ const app = new Elysia()
     "job.listQuery": JobModel.ListJobsQuery,
     "job.listResponse": JobModel.ListJobsResponse,
     "job.response": JobModel.JobResponse,
-    "key.create": KeyModel.createBody,
-    "key.createResponse": KeyModel.createResponse,
-    "key.listResponse": KeyModel.listResponse,
-    "key.response": KeyModel.response,
-    "key.usageResponse": KeyModel.usageResponse,
     "schema.create": SchemaModel.createBody,
     "schema.generate": SchemaModel.generateBody,
     "schema.generateResponse": SchemaModel.generateResponse,
@@ -60,7 +53,6 @@ const app = new Elysia()
           { description: "Document parsing (OCR to markdown)", name: "Parse" },
           { description: "Structured data extraction", name: "Extract" },
           { description: "OCR job management", name: "Jobs" },
-          { description: "API key management", name: "Keys" },
           { description: "Extraction schema management", name: "Schemas" },
         ],
       },
@@ -76,7 +68,6 @@ const app = new Elysia()
   .use(parseRoutes)
   .use(extractRoutes)
   .use(jobsRoutes)
-  .use(keysRoutes)
   .use(schemasRoutes)
   .use(jobsWebSocket);
 

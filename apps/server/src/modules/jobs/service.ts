@@ -131,12 +131,12 @@ const createFromUrl = async (input: CreateJobFromUrlInput): Promise<Job> => {
 };
 
 const getById = async (
-  organizationId: string,
+  _organizationId: string,
   _userId: string,
   jobId: string
 ): Promise<Job | null> => {
   const result = await db.query.jobs.findFirst({
-    where: and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)),
+    where: eq(jobs.id, jobId),
   });
 
   return result ?? null;
@@ -165,7 +165,7 @@ const deleteJob = async (
 };
 
 const list = async (
-  organizationId: string,
+  _organizationId: string,
   _userId: string,
   query: ListJobsQuery
 ): Promise<ListJobsResult> => {
@@ -173,7 +173,7 @@ const list = async (
   const limit = query.limit ?? DEFAULT_LIMIT;
   const offset = (page - 1) * limit;
 
-  const conditions = [eq(jobs.organizationId, organizationId)];
+  const conditions: ReturnType<typeof eq>[] = [];
 
   if (query.type) {
     conditions.push(eq(jobs.type, query.type as JobType));
@@ -183,7 +183,7 @@ const list = async (
     conditions.push(eq(jobs.status, query.status as JobStatus));
   }
 
-  const whereClause = and(...conditions);
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const sortColumn =
     query.sortBy === "updatedAt" ? jobs.updatedAt : jobs.createdAt;

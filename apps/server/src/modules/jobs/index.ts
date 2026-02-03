@@ -1,21 +1,16 @@
 import { Elysia, t } from "elysia";
 
-import { requireAuth } from "../../plugins/auth";
 import { JobService } from "./service";
 import { formatJobResponse, getErrorMessage, getWideEvent } from "./shared";
 
+const PUBLIC_ORG_ID = "public";
+
 export const jobsRoutes = new Elysia({ prefix: "/api/jobs" })
-  .use(requireAuth)
   .get(
     "/",
-    async ({ organization, query, set, user }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ query, set }) => {
       try {
-        const result = await JobService.list(organization.id, user.id, {
+        const result = await JobService.list(PUBLIC_ORG_ID, PUBLIC_ORG_ID, {
           limit: query.limit,
           page: query.page,
           sortBy: query.sortBy,
@@ -61,18 +56,13 @@ export const jobsRoutes = new Elysia({ prefix: "/api/jobs" })
   .get(
     "/:id",
     async (ctx) => {
-      const { organization, params, set, user } = ctx;
+      const { params, set } = ctx;
       const wideEvent = getWideEvent(ctx);
-
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
 
       try {
         const job = await JobService.getById(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_ORG_ID,
           params.id
         );
 
@@ -107,18 +97,13 @@ export const jobsRoutes = new Elysia({ prefix: "/api/jobs" })
   .delete(
     "/:id",
     async (ctx) => {
-      const { organization, params, set, user } = ctx;
+      const { params, set } = ctx;
       const wideEvent = getWideEvent(ctx);
-
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
 
       try {
         const job = await JobService.getById(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_ORG_ID,
           params.id
         );
 
@@ -129,7 +114,7 @@ export const jobsRoutes = new Elysia({ prefix: "/api/jobs" })
 
         wideEvent?.setJob({ id: job.id, type: job.type });
 
-        await JobService.delete(organization.id, user.id, params.id);
+        await JobService.delete(PUBLIC_ORG_ID, PUBLIC_ORG_ID, params.id);
 
         return { message: "Job deleted successfully" };
       } catch (error) {
@@ -150,20 +135,15 @@ export const jobsRoutes = new Elysia({ prefix: "/api/jobs" })
   .get(
     "/:id/download",
     async (ctx) => {
-      const { organization, params, query, set, user } = ctx;
+      const { params, query, set } = ctx;
       const wideEvent = getWideEvent(ctx);
-
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
 
       try {
         const format = query.format ?? "md";
         const { content, contentType, fileName } =
           await JobService.getDownloadContent(
-            organization.id,
-            user.id,
+            PUBLIC_ORG_ID,
+            PUBLIC_ORG_ID,
             params.id,
             format
           );

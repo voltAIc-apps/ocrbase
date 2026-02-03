@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed-public": "bun run src/seed-public.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,5 +1,10 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import appCss from "../styles.css?url";
@@ -27,7 +32,10 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
   </html>
 );
 
+const RootComponent = () => <Outlet />;
+
 export const Route = createRootRoute({
+  component: RootComponent,
   head: () => ({
     links: [
       {
@@ -44,10 +52,9 @@ export const Route = createRootRoute({
         name: "viewport",
       },
       {
-        title: "TanStack Start Starter",
+        title: "ocrbase",
       },
     ],
   }),
-
   shellComponent: RootDocument,
 });

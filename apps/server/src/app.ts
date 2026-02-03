@@ -12,8 +12,6 @@ import { healthRoutes } from "./modules/health";
 import { jobsRoutes } from "./modules/jobs";
 import { JobModel } from "./modules/jobs/model";
 import { jobsWebSocket } from "./modules/jobs/websocket";
-import { keysRoutes } from "./modules/keys";
-import { KeyModel } from "./modules/keys/model";
 import { parseRoutes } from "./modules/parse";
 import { schemasRoutes } from "./modules/schemas";
 import { SchemaModel } from "./modules/schemas/model";
@@ -90,7 +88,6 @@ const dynamicOpenApi = () =>
         { description: "Document parsing (OCR to markdown)", name: "Parse" },
         { description: "Structured data extraction", name: "Extract" },
         { description: "OCR job management", name: "Jobs" },
-        { description: "API key management", name: "Keys" },
         { description: "Extraction schema management", name: "Schemas" },
       ],
     },
@@ -107,11 +104,6 @@ export const app = new Elysia()
     "job.listQuery": JobModel.ListJobsQuery,
     "job.listResponse": JobModel.ListJobsResponse,
     "job.response": JobModel.JobResponse,
-    "key.create": KeyModel.createBody,
-    "key.createResponse": KeyModel.createResponse,
-    "key.listResponse": KeyModel.listResponse,
-    "key.response": KeyModel.response,
-    "key.usageResponse": KeyModel.usageResponse,
     "schema.create": SchemaModel.createBody,
     "schema.generate": SchemaModel.generateBody,
     "schema.generateResponse": SchemaModel.generateResponse,
@@ -139,7 +131,6 @@ export const app = new Elysia()
   .use(parseRoutes)
   .use(extractRoutes)
   .use(jobsRoutes)
-  .use(keysRoutes)
   .use(schemasRoutes)
   .use(jobsWebSocket);
 

@@ -1,10 +1,8 @@
-import { auth } from "@ocrbase/auth";
 import { db } from "@ocrbase/db";
 import { jobs } from "@ocrbase/db/schema/jobs";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 
-import { validateApiKey } from "../../lib/api-key";
 import {
   subscribeToJob,
   unsubscribeFromJob,
@@ -13,8 +11,6 @@ import {
 
 interface WebSocketData {
   jobId: string;
-  userId: string;
-  organizationId: string;
   callback: (message: JobUpdateMessage) => void;
 }
 
@@ -43,37 +39,8 @@ export const jobsWebSocket = new Elysia().ws("/ws/jobs/:jobId", {
   async open(ws) {
     const { jobId } = ws.data.params;
 
-    let userId: string;
-    let organizationId: string;
-
-    // Try API key auth first (skip usage tracking for websocket)
-    const apiKeyAuth = await validateApiKey(ws.data.headers?.authorization, {
-      updateUsage: false,
-    });
-    if (apiKeyAuth) {
-      ({ userId } = apiKeyAuth);
-      ({ organizationId } = apiKeyAuth);
-    } else {
-      // Fall back to session auth
-      const headers = new Headers();
-      const cookie = ws.data.headers?.cookie;
-      if (cookie) {
-        headers.set("cookie", cookie);
-      }
-
-      const session = await auth.api.getSession({ headers });
-      if (!session?.user || !session.session.activeOrganizationId) {
-        ws.send(JSON.stringify({ error: "Unauthorized", type: "error" }));
-        ws.close();
-        return;
-      }
-
-      userId = session.user.id;
-      organizationId = session.session.activeOrganizationId;
-    }
-
     const job = await db.query.jobs.findFirst({
-      where: and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)),
+      where: eq(jobs.id, jobId),
     });
 
     if (!job) {
@@ -89,8 +56,6 @@ export const jobsWebSocket = new Elysia().ws("/ws/jobs/:jobId", {
     (ws.data as unknown as { wsData: WebSocketData }).wsData = {
       callback,
       jobId,
-      organizationId,
-      userId,
     };
 
     subscribeToJob(jobId, callback);

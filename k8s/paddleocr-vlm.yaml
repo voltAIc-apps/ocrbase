@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paddleocr-vlm
+  namespace: ocrbase
+  labels:
+    app: paddleocr-vlm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paddleocr-vlm
+  template:
+    metadata:
+      labels:
+        app: paddleocr-vlm
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        kubernetes.io/hostname: chat.voltaic.systems
+      containers:
+        - name: paddleocr-vlm
+          image: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleocr-genai-vllm-server:latest-nvidia-gpu
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: VLLM_MODEL
+              value: "PaddlePaddle/PaddleOCR-VL-2B"
+            - name: VLLM_TENSOR_PARALLEL_SIZE
+              value: "1"
+            - name: VLLM_GPU_MEMORY_UTILIZATION
+              value: "0.8"
+            - name: VLLM_MAX_MODEL_LEN
+              value: "4096"
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: model-cache
+              mountPath: /root/.cache
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            timeoutSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: paddleocr-config
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paddleocr-vlm
+  namespace: ocrbase
+spec:
+  selector:
+    app: paddleocr-vlm
+  ports:
+    - port: 8000
+      targetPort: 8080
+      name: http
+  type: ClusterIP

@@ -2,12 +2,15 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@ocrbase/env/server";
 import { generateText } from "ai";
 
-const openrouter = createOpenAI({
-  apiKey: env.OPENROUTER_API_KEY ?? "",
-  baseURL: "https://openrouter.ai/api/v1",
+const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
+
+const llmProvider = createOpenAI({
+  apiKey: env.OPENROUTER_API_KEY ?? "ollama",
+  baseURL: env.LLM_BASE_URL ?? DEFAULT_BASE_URL,
 });
 
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
+const getModel = () => env.LLM_MODEL ?? DEFAULT_MODEL;
 
 interface ProcessExtractionOptions {
   markdown: string;
@@ -38,15 +41,18 @@ interface GeneratedSchema {
 }
 
 export const checkLlmHealth = async (): Promise<boolean> => {
-  if (!env.OPENROUTER_API_KEY) {
+  const baseUrl = env.LLM_BASE_URL ?? DEFAULT_BASE_URL;
+
+  // If no API key and using OpenRouter, skip health check
+  if (!env.OPENROUTER_API_KEY && !env.LLM_BASE_URL) {
     return true;
   }
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/models", {
-      headers: {
-        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-      },
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: env.OPENROUTER_API_KEY
+        ? { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` }
+        : {},
     });
     return response.ok;
   } catch {
@@ -79,8 +85,10 @@ export const llmService = {
     markdown,
     hints,
   }: GenerateSchemaOptions): Promise<GeneratedSchema> {
-    if (!env.OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+    if (!env.OPENROUTER_API_KEY && !env.LLM_BASE_URL) {
+      throw new Error(
+        "LLM is not configured (set OPENROUTER_API_KEY or LLM_BASE_URL)"
+      );
     }
 
     let systemPrompt = `You are a JSON schema generator. Analyze the provided document and generate a JSON schema that can be used to extract structured data from similar documents.
@@ -99,7 +107,7 @@ Do not include any markdown formatting or explanation. Just the JSON object.`;
     }
 
     const result = await generateText({
-      model: openrouter(DEFAULT_MODEL),
+      model: llmProvider(getModel()),
       prompt: markdown,
       system: systemPrompt,
     });
@@ -112,8 +120,10 @@ Do not include any markdown formatting or explanation. Just the JSON object.`;
     schema,
     hints,
   }: ProcessExtractionOptions): Promise<ExtractionResult> {
-    if (!env.OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+    if (!env.OPENROUTER_API_KEY && !env.LLM_BASE_URL) {
+      throw new Error(
+        "LLM is not configured (set OPENROUTER_API_KEY or LLM_BASE_URL)"
+      );
     }
 
     let systemPrompt =
@@ -127,15 +137,16 @@ Do not include any markdown formatting or explanation. Just the JSON object.`;
       systemPrompt += `\n\nFollow this JSON schema:\n${JSON.stringify(schema, null, 2)}`;
     }
 
+    const model = getModel();
     const result = await generateText({
-      model: openrouter(DEFAULT_MODEL),
+      model: llmProvider(model),
       prompt: markdown,
       system: systemPrompt,
     });
 
     return {
       data: extractJsonFromResponse<Record<string, unknown>>(result.text),
-      model: DEFAULT_MODEL,
+      model,
       usage: {
         completionTokens: result.usage.outputTokens ?? 0,
         promptTokens: result.usage.inputTokens ?? 0,

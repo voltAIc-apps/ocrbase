@@ -17,9 +17,6 @@
 # Dependencies (will be installed in container)
 node_modules
 
-# Apps not needed for server build
-# apps/web - commented out for web build
-
 # Build artifacts
 dist
 *.log
@@ -30,7 +27,6 @@ dist
 
 # Docker files (not needed in context)
 docker-compose*.yml
-Dockerfile*
 
 # Documentation
 *.md

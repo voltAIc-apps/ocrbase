@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocrbase-web
+  namespace: ocrbase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocrbase-web
+  template:
+    metadata:
+      labels:
+        app: ocrbase-web
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: ocrbase-web
+          image: crepo.re-cloud.io/voltaic/ocrbase-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          env:
+            - name: VITE_SERVER_URL
+              value: "https://pdf2json.simplify-erp.de"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocrbase-web
+  namespace: ocrbase
+spec:
+  selector:
+    app: ocrbase-web
+  ports:
+    - port: 3001
+      targetPort: 3001

@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocrbase-worker
+  namespace: ocrbase
+  labels:
+    app: ocrbase-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocrbase-worker
+  template:
+    metadata:
+      labels:
+        app: ocrbase-worker
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: ocrbase-worker
+          image: crepo.re-cloud.io/voltaic/ocrbase:latest
+          imagePullPolicy: Always
+          command: ["./server", "worker"]
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: llmhub-credentials
+                  key: DB_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://llm_user:$(DB_PASSWORD)@llmhub-db.llmhub.svc:5432/ocrbase"
+            - name: REDIS_URL
+              value: "redis://llmhub-redis.llmhub.svc:6379/1"
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ocrbase-secrets
+                  key: BETTER_AUTH_SECRET
+            - name: BETTER_AUTH_URL
+              value: "https://pdf2json.simplify-erp.de"
+            - name: CORS_ORIGINS
+              value: "https://pdf2json.simplify-erp.de"
+            - name: PADDLE_OCR_URL
+              value: "http://paddleocr-api:8080"
+            - name: S3_ENDPOINT
+              value: "http://llmhub-minio.llmhub.svc:9000"
+            - name: S3_BUCKET
+              value: "ocrbase"
+            - name: S3_ACCESS_KEY
+              value: "minioadmin"
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llmhub-credentials
+                  key: MINIO_ROOT_PASSWORD
+            - name: LLM_BASE_URL
+              value: "http://open-webui-ollama.open-webui.svc.cluster.local:11434/v1"
+            - name: LLM_MODEL
+              value: "llama3.1:8b"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"

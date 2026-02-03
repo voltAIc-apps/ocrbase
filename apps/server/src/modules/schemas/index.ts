@@ -3,9 +3,11 @@ import { jobs } from "@ocrbase/db/schema/jobs";
 import { eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 
-import { requireAuth } from "../../plugins/auth";
 import { SchemaModel } from "./model";
 import { SchemaService } from "./service";
+
+const PUBLIC_ORG_ID = "public";
+const PUBLIC_USER_ID = "public";
 
 const formatSchemaResponse = (schema: {
   id: string;
@@ -39,19 +41,13 @@ const getErrorMessage = (caught: unknown, fallback: string): string =>
   caught instanceof Error ? caught.message : fallback;
 
 export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
-  .use(requireAuth)
   .post(
     "/",
-    async ({ body, user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ body, set }) => {
       try {
         const schema = await SchemaService.create(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID,
           body
         );
 
@@ -76,14 +72,12 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
   )
   .get(
     "/",
-    async ({ user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ set }) => {
       try {
-        const schemasList = await SchemaService.list(organization.id, user.id);
+        const schemasList = await SchemaService.list(
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID
+        );
         return schemasList.map(formatSchemaResponse);
       } catch (error) {
         set.status = 500;
@@ -99,16 +93,11 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
   )
   .get(
     "/:id",
-    async ({ params, user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ params, set }) => {
       try {
         const schema = await SchemaService.getById(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID,
           params.id
         );
 
@@ -135,16 +124,11 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
   )
   .patch(
     "/:id",
-    async ({ params, body, user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ params, body, set }) => {
       try {
         const schema = await SchemaService.update(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID,
           params.id,
           body
         );
@@ -173,16 +157,11 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
   )
   .delete(
     "/:id",
-    async ({ params, user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ params, set }) => {
       try {
         const deleted = await SchemaService.delete(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID,
           params.id
         );
 
@@ -209,12 +188,7 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
   )
   .post(
     "/generate",
-    async ({ body, user, organization, set }) => {
-      if (!user || !organization) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
-
+    async ({ body, set }) => {
       try {
         let markdown: string;
         let sampleJobId: string | undefined;
@@ -228,11 +202,6 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
           if (!job) {
             set.status = 404;
             return { message: "Job not found" };
-          }
-
-          if (job.organizationId !== organization.id) {
-            set.status = 403;
-            return { message: "Access denied" };
           }
 
           if (!job.markdownResult) {
@@ -254,8 +223,8 @@ export const schemasRoutes = new Elysia({ prefix: "/api/schemas" })
         }
 
         const result = await SchemaService.generate(
-          organization.id,
-          user.id,
+          PUBLIC_ORG_ID,
+          PUBLIC_USER_ID,
           markdown,
           body.hints,
           sampleJobId

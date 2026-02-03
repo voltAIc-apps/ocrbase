@@ -18,6 +18,8 @@ export const env = createEnv({
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     HOST: z.string().default("0.0.0.0"),
+    LLM_BASE_URL: z.url().optional(),
+    LLM_MODEL: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),

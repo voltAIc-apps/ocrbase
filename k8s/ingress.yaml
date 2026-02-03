@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ocrbase-ingress
+  namespace: ocrbase
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - pdf2json.simplify-erp.de
+      secretName: pdf2json-tls
+  rules:
+    - host: pdf2json.simplify-erp.de
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: ocrbase-server
+                port:
+                  number: 3000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: ocrbase-server
+                port:
+                  number: 3000
+          - path: /openapi
+            pathType: Prefix
+            backend:
+              service:
+                name: ocrbase-server
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ocrbase-web
+                port:
+                  number: 3001

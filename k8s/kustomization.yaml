@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ocrbase
+
+resources:
+  - namespace.yaml
+  - secrets.yaml
+  - configmaps.yaml
+  - paddleocr-vlm.yaml
+  - paddleocr-api.yaml
+  - ocrbase-server.yaml
+  - ocrbase-worker.yaml
+  - ocrbase-web.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: ocrbase
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
