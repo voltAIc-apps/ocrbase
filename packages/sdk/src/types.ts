@@ -54,6 +54,12 @@ export type JobStatus =
   | "completed"
   | "failed";
 
+export interface StorageInfo {
+  bucket: string;
+  endpoint: string;
+  key: string;
+}
+
 export interface JobResponse {
   id: string;
   organizationId: string;
@@ -79,6 +85,7 @@ export interface JobResponse {
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  storage: StorageInfo | null;
 }
 
 export interface PaginationMeta {
@@ -173,6 +180,25 @@ export interface HealthResponse {
 
 export interface LiveResponse {
   status: "ok";
+}
+
+export interface QueueCounts {
+  active: number;
+  completed: number;
+  failed: number;
+  waiting: number;
+}
+
+export interface InfraResponse {
+  redis: {
+    url: string | null;
+    queue: QueueCounts | null;
+  };
+  storage: {
+    bucket: string;
+    consoleUrl: string | null;
+    endpoint: string | null;
+  };
 }
 
 export interface JobUpdateMessage {

@@ -1,10 +1,11 @@
 import { db } from "@ocrbase/db";
+import { env } from "@ocrbase/env/server";
 import { sql } from "drizzle-orm";
 import { Elysia } from "elysia";
 
 import { checkLlmHealth } from "../../services/llm";
 import { checkOcrHealth } from "../../services/ocr";
-import { checkQueueHealth } from "../../services/queue";
+import { checkQueueHealth, getQueueCounts } from "../../services/queue";
 import { checkStorageHealth } from "../../services/storage";
 
 export interface HealthCheck {
@@ -46,6 +47,36 @@ const determineOverallStatus = (
   return allHealthy ? "healthy" : "degraded";
 };
 
+const deriveMinioConsoleUrl = (endpoint: string | undefined): string | null => {
+  if (!endpoint) {
+    return null;
+  }
+  try {
+    const url = new URL(endpoint);
+    url.port = "9001";
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+};
+
+export interface InfraResponse {
+  redis: {
+    url: string | null;
+    queue: {
+      active: number;
+      completed: number;
+      failed: number;
+      waiting: number;
+    } | null;
+  };
+  storage: {
+    bucket: string;
+    consoleUrl: string | null;
+    endpoint: string | null;
+  };
+}
+
 export const healthRoutes = new Elysia({ prefix: "/health" })
   .get("/live", () => ({ status: "ok" }), {
     detail: {
@@ -83,6 +114,44 @@ export const healthRoutes = new Elysia({ prefix: "/health" })
     {
       detail: {
         description: "Readiness probe with dependency health checks",
+        tags: ["Health"],
+      },
+    }
+  )
+  .get(
+    "/infra",
+    async (): Promise<InfraResponse> => {
+      const queueCounts = await getQueueCounts();
+
+      // Mask Redis URL for display (hide password)
+      let maskedRedisUrl: string | null = null;
+      if (env.REDIS_URL) {
+        try {
+          const url = new URL(env.REDIS_URL);
+          if (url.password) {
+            url.password = "***";
+          }
+          maskedRedisUrl = url.toString();
+        } catch {
+          maskedRedisUrl = "[invalid url]";
+        }
+      }
+
+      return {
+        redis: {
+          queue: queueCounts,
+          url: maskedRedisUrl,
+        },
+        storage: {
+          bucket: env.S3_BUCKET,
+          consoleUrl: deriveMinioConsoleUrl(env.S3_ENDPOINT),
+          endpoint: env.S3_ENDPOINT ?? null,
+        },
+      };
+    },
+    {
+      detail: {
+        description: "Infrastructure information for debugging",
         tags: ["Health"],
       },
     }

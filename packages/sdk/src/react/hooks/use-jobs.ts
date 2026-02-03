@@ -2,6 +2,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type Query,
   type UseMutationResult,
   type UseQueryResult,
 } from "@tanstack/react-query";
@@ -29,13 +30,24 @@ export const useJobs = (
   });
 };
 
-export const useJob = (id: string): UseQueryResult<JobResponse> => {
+export interface UseJobOptions {
+  refetchInterval?:
+    | number
+    | false
+    | ((query: Query<JobResponse, Error>) => number | false | undefined);
+}
+
+export const useJob = (
+  id: string,
+  options?: UseJobOptions
+): UseQueryResult<JobResponse> => {
   const client = useOCRBaseClient();
 
   return useQuery({
     enabled: Boolean(id),
     queryFn: () => client.jobs.get(id),
     queryKey: jobKeys.detail(id),
+    refetchInterval: options?.refetchInterval,
   });
 };
 

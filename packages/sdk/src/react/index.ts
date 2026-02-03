@@ -32,3 +32,5 @@ export {
   type UseJobSubscriptionOptions,
   type UseJobSubscriptionResult,
 } from "./hooks/use-job-subscription";
+
+export { infraKeys, useInfra } from "./hooks/use-infra";

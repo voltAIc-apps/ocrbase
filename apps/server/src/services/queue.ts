@@ -82,6 +82,31 @@ export const checkQueueHealth = async (): Promise<boolean> => {
   }
 };
 
+export interface QueueCounts {
+  active: number;
+  completed: number;
+  failed: number;
+  waiting: number;
+}
+
+export const getQueueCounts = async (): Promise<QueueCounts | null> => {
+  try {
+    const queue = getJobQueue();
+    if (!queue) {
+      return null;
+    }
+    const counts = await queue.getJobCounts();
+    return {
+      active: counts.active ?? 0,
+      completed: counts.completed ?? 0,
+      failed: counts.failed ?? 0,
+      waiting: counts.waiting ?? 0,
+    };
+  } catch {
+    return null;
+  }
+};
+
 // For worker process - will throw if Redis not configured
 export const getWorkerConnection = (): ConnectionOptions => {
   const conn = getRedisConnection();

@@ -48,6 +48,12 @@ const ListJobsQuery = Type.Object({
   ),
 });
 
+const StorageInfo = Type.Object({
+  bucket: Type.String(),
+  endpoint: Type.String(),
+  key: Type.String(),
+});
+
 const JobResponse = Type.Object({
   completedAt: Type.Union([Type.String(), Type.Null()]),
   createdAt: Type.String(),
@@ -75,6 +81,7 @@ const JobResponse = Type.Object({
     Type.Literal("completed"),
     Type.Literal("failed"),
   ]),
+  storage: Type.Union([StorageInfo, Type.Null()]),
   tokenCount: Type.Union([Type.Number(), Type.Null()]),
   type: Type.Union([Type.Literal("parse"), Type.Literal("extract")]),
   updatedAt: Type.String(),

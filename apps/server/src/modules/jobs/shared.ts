@@ -1,5 +1,7 @@
 import type { Job } from "@ocrbase/db/schema/jobs";
 
+import { env } from "@ocrbase/env/server";
+
 import type { WideEventContext } from "../../lib/wide-event";
 import type { JobResponse } from "./model";
 
@@ -33,6 +35,14 @@ export const formatJobResponse = (job: Job): JobResponse => ({
   sourceUrl: job.sourceUrl,
   startedAt: job.startedAt?.toISOString() ?? null,
   status: job.status,
+  storage:
+    job.fileKey && env.S3_ENDPOINT
+      ? {
+          bucket: env.S3_BUCKET,
+          endpoint: env.S3_ENDPOINT,
+          key: job.fileKey,
+        }
+      : null,
   tokenCount: job.tokenCount,
   type: job.type,
   updatedAt: job.updatedAt.toISOString(),
@@ -58,6 +68,9 @@ interface CreateJobHandlerOptions {
   type: "parse" | "extract";
 }
 
+const PUBLIC_ORG_ID = "public";
+const PUBLIC_USER_ID = "public";
+
 export const createJobHandler = async <
   T extends {
     apiKey?: { id: string } | null;
@@ -67,23 +80,19 @@ export const createJobHandler = async <
       schemaId?: string;
       url?: string;
     };
-    organization: { id: string } | null;
+    organization?: { id: string } | null;
     set: { status?: number | string };
-    user: { id: string } | null;
+    user?: { id: string } | null;
   },
 >(
   ctx: T,
   wideEvent: WideEventContext | undefined,
   options: CreateJobHandlerOptions
 ): Promise<JobResponse | { message: string }> => {
-  const { apiKey, body, organization, set, user } = ctx;
+  const { apiKey, body, set } = ctx;
 
-  if (!user || !organization) {
-    set.status = 401;
-    return { message: "Unauthorized" };
-  }
-
-  const organizationId = organization.id;
+  const organizationId = ctx.organization?.id ?? PUBLIC_ORG_ID;
+  const userId = ctx.user?.id ?? PUBLIC_USER_ID;
 
   try {
     const hasValidUrl =
@@ -101,7 +110,7 @@ export const createJobHandler = async <
           url: body.url,
         },
         organizationId,
-        userId: user.id,
+        userId,
       });
 
       setWideEventJob(wideEvent, job);
@@ -130,7 +139,7 @@ export const createJobHandler = async <
         type: file.type,
       },
       organizationId,
-      userId: user.id,
+      userId,
     });
 
     setWideEventJob(wideEvent, job);
