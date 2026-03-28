@@ -2,6 +2,13 @@
 
 Turn PDFs into structured data at scale. Powered by frontier open-weight OCR models with a type-safe TypeScript SDK.
 
+## Last Status - 28.03.26
+
+- https://pdf2json.simplify-erp.de/
+- https://github.com/euroblaze/kj/issues/270
+- https://github.com/PDFCraftTool/PDFCraft
+- https://github.com/ocrbase-hq/ocrbase
+
 ## Features
 
 - **Best-in-class OCR** - PaddleOCR-VL-0.9B for accurate text extraction
